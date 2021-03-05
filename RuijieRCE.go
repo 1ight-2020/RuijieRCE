@@ -90,7 +90,7 @@ func check(target string, header map[string]string) (bool, error) {
 	body, _ := ioutil.ReadAll(reqs.Body)
 	defer reqs.Body.Close()
 
-	if reqs.StatusCode == 200 &&  strings.Contains(string(body), "File not found") == false{
+	if reqs.StatusCode == 200 && strings.Contains(string(body), "File not found") == false && strings.Contains(string(body), "Authorization Required") == false{
 		addHistory(target)
 		return true, nil
 	}else {
