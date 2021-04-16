@@ -21,9 +21,7 @@ Usage of ./RuijieRCE:
 
 ## 使用
 检测到漏洞后生成随机数.php文件执行命令，也可以上菜刀。
-![](./Cknife.png)
-
-![](RuijieRCE/Cknife.png)
+![](./cknife.png)
 
 ### 上传一句话木马
 GET密码：cmd
